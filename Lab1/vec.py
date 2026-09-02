@@ -1,7 +1,6 @@
-
 import sys
-import random
 import math
+import random
 from typing import Self
 
 
@@ -12,9 +11,9 @@ A custom vector class implementation for educational purposes.
 class Vec:
     def __init__(self, src=None) -> Self:
         if src is None:
-            self.elements = ()
+            self.elements = []
         else:
-            elements = tuple(src)
+            elements = list(src)
             for x in elements:
                 if not isinstance(x, (int, float)):
                     raise TypeError(f"Scalar must be a number: {type(x)}")
@@ -26,29 +25,22 @@ class Vec:
         if len(self.elements) != len(t):
             raise TypeError(f"Type error - vectors must be of same dimensions")
 
-        return Vec(tuple(
-            round(x + y, 5)
-            for x, y in zip(self.elements, t.elements)
-        ))
+        return Vec([round(x + y, 5) for x, y in zip(self.elements, t.elements)])
 
 
     def __rmul__(self, scalar: int | float) -> Self:
         if not isinstance(scalar, (int, float)):
             raise TypeError(f"Vector multiplication with invalid type: {type(scalar)}")
-
-        return Vec(tuple(
-            round(x * scalar, 5)
-            for x in self.elements
-        ))
+        #
+        return Vec([round(x * scalar, 5) for x in self.elements])
 
     def __imul__(self, scalar: int | float) -> Self:
         if not isinstance(scalar, (int, float)):
             raise TypeError(f"Vector multiplication with invalid type: {type(scalar)}")
 
-        self.elements = tuple(
-            round(x * scalar, 5)
-            for x in self.elements
-        )
+        for i, val in enumerate(self.elements):
+            self.elements[i] = round(val * scalar, 5)
+        #
         return self
 
     def __repr__(self) -> str:
@@ -60,69 +52,81 @@ class Vec:
     def __sub__(self, t: Self) -> Self:
         if not isinstance(t, Vec):
             raise TypeError(f"Expected Vec: {type(t)}")
-        if len(self.elements) != len(t):
-            raise TypeError(f"Type error - vectors must be of same dimensions")
 
-        return Vec(tuple(
-            round(x - y, 5)
-            for x, y in zip(self.elements, t.elements)
-        ))
+        if len(self) != len(t):
+            raise TypeError("Type error - vectors must be of same dimensions")
+
+        result = []
+        for i in range(len(self.elements)):
+            result.append(round(self.elements[i] - t.elements[i], 5))
+
+        return Vec(result)
 
     def __neg__(self) -> Self:
-        return Vec(tuple(-x for x in self.elements))
+        result = []
 
-    def __radd__(self, other: Self) -> Self:
+        for value in self.elements:
+            result.append(-value)
+
+        return Vec(result)
+
+    def __radd__(self, other):
         if not isinstance(other, Vec):
             raise TypeError(f"Expected Vec: {type(other)}")
 
         return other + self
 
-    def __iadd__(self, other: Self) -> Self:
+    def __iadd__(self, other):
         if not isinstance(other, Vec):
             raise TypeError(f"Expected Vec: {type(other)}")
 
-        if len(self.elements) != len(other):
-            raise TypeError(f"Type error - vectors must be of same dimensions")
+        if len(self.elements) != len(other.elements):
+            raise TypeError("Type error - vectors must be of same dimensions")
 
-        self.elements = tuple(
-            round(x + y, 5)
-            for x, y in zip(self.elements, other.elements)
-        )
+        for i in range(len(self.elements)):
+            self.elements[i] = round(
+                self.elements[i] + other.elements[i], 5
+            )
+
         return self
 
     # return a vector of @n zeroes. precondition: @n > 0
     @staticmethod
     def zeros(n: int) -> Self:
         if n <= 0:
-            raise ValueError("The dimension must be greater than 0")
+            raise ValueError("Vector dimension must be greater than zero")
 
-        return Vec((0,) * n)
+        return Vec([0 for _ in range(n)])
 
     # return a vector of @n. precondition: @n > 0
     @staticmethod
     def ones(n: int) -> Self:
         if n <= 0:
-            raise ValueError("The dimension must be greater than 0")
+            raise ValueError("Vector dimension must be greater than zero")
 
-        return Vec((1,) * n)
+        return Vec([1 for _ in range(n)])
 
     # return a vector of @n uniformly distributed numbers in [0, 1]. precondition: @n > 0
     @staticmethod
     def uniform(n: int) -> Self:
         if n <= 0:
-            raise ValueError("The dimension must be greater than 0")
+            raise ValueError("Vector dimension must be greater than zero")
 
-        return Vec(tuple(
-            round(random.uniform(0, 1), 5)
-            for _ in range(n)
-        ))
+        values = []
+        for _ in range(n):
+            values.append(random.random())
+
+        return Vec(values)
 
     # Calculates the Euclidean norm (L2 norm) of the vector.
     # sqrt(e[0]^2 + e[1]^2 + e[2]^2 + ... + e[n-1]^2)
     def norm(self) -> float:
-        return math.sqrt(
-            sum(x * x for x in self.elements)
-        )
+        total = 0
+
+        for value in self.elements:
+            total += value * value
+
+        return math.sqrt(total)
 
 
 """
@@ -145,40 +149,41 @@ if sys.version_info < (3, 8):
     sys.exit("Error: This script requires Python 3.8 or higher.")
 
 if __name__ == "__main__":
-    v1 = Vec([1, 2, 3])
-    v2 = Vec([3, 5, 6])
+    v1 = Vec([0, 1, 1.03])
+    print("Original vector:", v1)
 
-    print("v1 =", v1)
-    print("v2 =", v2)
+    v2 = 2.2 * v1
+    print("After scalar multiplication:", v2)
 
-    v3 = -v1
-    print("Negative v1 =", v3)
+    v2 *= 5
+    print("After multiplying again:", v2)
 
-    print("Type of v1 =", type(v1))
-    print("Type of elements =", type(v2.elements))
+    result = v1 + v2
+    print("Addition result:", result)
 
-    v4 = v1 + v2
-    print("v1 + v2 =", v4)
+    zero_vec = Vec.zeros(7)
+    print("Zero vector:", zero_vec)
 
-    v5 = v1 - v2
-    print("v1 - v2 =", v5)
+    one_vec = Vec.ones(4)
+    print("One vector:", one_vec)
 
-    v6 = 5 * v5
-    print("5 * v5 =", v6)
+    difference = v1 - v2
+    print("Subtraction result:", difference)
 
-    v6 *= 67
-    print("v6 after *= 67 =", v6)
+    negative = -v1
+    print("Negative of v1:", negative)
 
-    v7 = v1 + v2
-    print("v7 =", v7)
+    v3 = Vec([2, 4, 6])
+    v4 = Vec([1, 2, 3])
 
-    v7 += v1
-    print("v7 after += v1 =", v7)
+    print("v3:", v3)
+    print("v4:", v4)
+    print("v3 + v4:", v3 + v4)
 
-    print("Zeros =", Vec.zeros(6))
-    print("Ones =", Vec.ones(7))
-    print("Uniform =", Vec.uniform(3))
+    v3 += v4
+    print("v3 after addition:", v3)
 
-    v8 = Vec([-3, 2, -1, 1, -1])
-    print("v8 =", v8)
-    print("Norm of v8 =", v8.norm())
+    random_vec = Vec.uniform(5)
+    print("Random vector:", random_vec)
+
+    print("Norm of v1:", v1.norm())
